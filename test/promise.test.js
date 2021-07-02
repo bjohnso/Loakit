@@ -33,7 +33,7 @@ describe('Promise', () => {
         assert.strictEqual(pinkyPromise, initialPromise);
     });
 
-    it('has set promise', async () => {
+    it('has set a pinky promise', async () => {
         const newPinkyPromise = 'Get 60%';
         await promise.methods.setPinkyPromise(newPinkyPromise)
             .send({ from: accounts[0] });
