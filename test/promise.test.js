@@ -7,13 +7,15 @@ const { abi, evm } = require('../compile');
 let accounts;
 let promise;
 
+const initialPromise = 'Get 50%'
+
 beforeEach(async () => {
     accounts = await web3.eth.getAccounts();
 
     promise = await new web3.eth.Contract(abi)
         .deploy({
             data: evm.bytecode.object,
-            arguments: ['Get 50%'] }
+            arguments: [initialPromise] }
         )
         .send({
             from: accounts[0],
@@ -22,7 +24,20 @@ beforeEach(async () => {
 });
 
 describe('Promise', () => {
-    it('deploys a contract', () => {
-        console.log(promise);
+    it('deploys a Promise contract', () => {
+        assert.ok(promise.options.address);
+    });
+
+    it('has a pinky promise', async () => {
+        const pinkyPromise = await promise.methods.pinkyPromise().call();
+        assert.strictEqual(pinkyPromise, initialPromise);
+    });
+
+    it('has set promise', async () => {
+        const newPinkyPromise = 'Get 60%';
+        await promise.methods.setPinkyPromise(newPinkyPromise)
+            .send({ from: accounts[0] });
+        const pinkyPromise = await promise.methods.pinkyPromise().call();
+        assert.strictEqual(pinkyPromise, newPinkyPromise);
     });
 });
