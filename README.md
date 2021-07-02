@@ -7,4 +7,4 @@ Decentralized learning is included with the platform. This can help the learners
 
 "node deploy.js"
 - will deploy a basic smart contract to an ethereum network
-- not you will need to provide a deploy_config.json containing your metamask mnemonic as well as an infura url to deploy to
+- note you will need to provide a deploy_config.json containing your metamask mnemonic as well as an infura url to deploy to
