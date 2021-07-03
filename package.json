@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "compile": "node ethereum/scripts/compile.js",
+    "deploy": "node ethereum/scripts/deploy.js"
   },
   "repository": {
     "type": "git",
