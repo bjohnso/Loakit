@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const solc = require('solc');
 
-const promiseContractPath = path.resolve(__dirname, 'contracts', 'promise.sol');
+const promiseContractPath = path.resolve(__dirname, 'contracts', 'Sponsorship.sol');
 const source = fs.readFileSync(promiseContractPath, 'utf8');
 
 const solcInput = JSON.stringify({
