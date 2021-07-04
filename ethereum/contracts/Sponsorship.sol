@@ -1,34 +1,14 @@
 pragma solidity >=0.7.0 <0.9.0;
+import "./LoaLib.sol";
 
 contract Sponsorship {
 
-    Sponsor public sponsor; // sponsor
+    LoaLib.Sponsor public sponsor; // sponsor
     uint256 public balance; // amount of wei staked in this contract
     uint public scoreRequirement; // pass mark to validate this contract
-    uint256 public minimumStake = 10000000000000000; // minimum stake for this contract
+    uint public acceptanceRequirement; // percentage of learners that need to agree to this contract
+    uint256 public minimumStake = 10000000000000000; // minimum stake in wei for this contract
     address public selectedSchool;
-
-    struct Sponsor {
-        string name; // sponsor name
-        address delegate; // entity delegated to
-    }
-
-    struct Syllabus {
-        string[] questions; // questions to assess learners
-        string[] answers; // answers to assessment
-    }
-
-    struct School {
-        string name; // school name
-        Syllabus syllabus; // school syllabus
-        address delegate; // entity delegated to
-        bool selected; // is selected by the sponsor
-    }
-
-    struct Learner {
-        bool agreed; // has agreed to promise
-        uint score; // learner score
-    }
 
     constructor(string memory sponsorName) {
         require(
@@ -39,15 +19,16 @@ contract Sponsorship {
         sponsor.delegate = msg.sender;
     }
 
-    mapping(address => School) public schools;
+    mapping(address => LoaLib.School) public schools;
+    mapping(address => LoaLib.Learner) public learners;
 
-    function stakeReward(uint score) public payable {
+    function stakeReward(uint score, uint acceptance) public payable {
         require(
             msg.sender == sponsor.delegate,
             "Only the sponsor may stake a reward."
         );
         require(
-            scoreRequirement == 0,
+            scoreRequirement == 0 && acceptanceRequirement == 0,
             "A reward can not be staked more than once."
         );
         require(
@@ -58,19 +39,47 @@ contract Sponsorship {
             score > 0,
             "A score can not be 0."
         );
+        require(
+            acceptance > 0,
+            "Acceptance must be greater than 0."
+        );
 
         balance += msg.value;
         scoreRequirement = score;
+        acceptanceRequirement = acceptanceRequirement;
     }
 
+    function agreeToSponsorRequirement(LoaLib.Learner memory learner) public {
+        require(
+            msg.sender != sponsor.delegate && msg.sender != selectedSchool,
+            "Only a learner may agree to the sponsor requirement."
+        );
+        require(
+            selectedSchool != address(0x0),
+            "A school must be selected before a learner can agree."
+        );
+        require(
+            bytes(learner.name).length > 0,
+            "Learner must have a name."
+        );
+        require(
+            bytes(learner.name).length > 0,
+            "Learner must have a name."
+        );
+        learners[msg.sender] = learner;
+    }
 
-    function addSchool(string memory name, string[] memory questions, string[] memory answers) public {
+    function addSchool(LoaLib.School memory school) public {
         require(
             msg.sender != sponsor.delegate,
             "The sponsor may not also be a school."
         );
         require(
-            questions.length == answers.length,
+            bytes(school.name).length > 0,
+            "School must have a name"
+        );
+        require(
+            school.syllabus.questions.length == school.syllabus.answers.length,
             "Every question must have an answer."
         );
         require(
@@ -79,20 +88,14 @@ contract Sponsorship {
         );
         require(
             balance >= minimumStake,
-            "A stake of at least 0.01 ether must be set before a school can be selected."
+            "The sponsor must first set a stake before a school can be added."
+        );
+        require(
+            schools[msg.sender].delegate == address(0x0),
+            "A school can not be added more than once."
         );
 
-        Syllabus memory syllabus = Syllabus({
-        questions: questions,
-        answers: answers
-        });
-
-        schools[msg.sender] = School({
-        name: name,
-        syllabus: syllabus,
-        delegate: msg.sender,
-        selected: false
-        });
+        schools[msg.sender] = school;
     }
 
     function selectSchool(address schoolAddress) public returns (address selected) {
@@ -109,6 +112,10 @@ contract Sponsorship {
             "A school address must exist."
         );
         require(
+            schools[schoolAddress].sponsor == address(0x0),
+            "A school can not be selected if it already has a sponsor."
+        );
+        require(
             scoreRequirement > 0,
             "A score requirement must be specified before a school can be selected."
         );
@@ -117,12 +124,9 @@ contract Sponsorship {
             "A stake of at least 0.01 ether must be set before a school can be selected."
         );
 
-        School memory school = schools[schoolAddress];
-
-        if (school.delegate == schoolAddress) {
-            school.selected = true;
-            selected = school.delegate;
-            selectedSchool = selected;
+        if (schools[schoolAddress].delegate == schoolAddress) {
+            schools[schoolAddress].sponsor = msg.sender;
+            selected = schoolAddress;
         }
 
         return selected;
